@@ -1,4 +1,4 @@
-import { DurationPicker } from './duration-picker.js?v=2';
+import { DurationPicker } from './duration-picker.js?v=3';
 const $ = id => document.getElementById(id);
 const config = window.KAPPA_CONFIG;
 const durationPicker = new DurationPicker($('duration-picker'));
@@ -11,17 +11,85 @@ const demoResidents = [{id:'sample-1',name:'Sample Resident A',phone:null},{id:'
 function escape(text){const el=document.createElement('span');el.textContent=String(text??'');return el.innerHTML;}
 function status(m){return !m.owner_id?'Empty':Date.parse(m.ends_at)>Date.now()?'In use':'Done';}
 function timing(m){const end=Date.parse(m.ends_at);const start=Date.parse(m.started_at);const seconds=Math.max(0,Math.ceil((end-Date.now())/1000));return {seconds,percent:Number.isFinite(start)&&end>start?Math.min(100,Math.max(0,100*(Date.now()-start)/(end-start))):null};}
-function timerMarkup(m){if(!m.owner_id)return '';const {seconds,percent}=timing(m);const label=seconds?`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')} estimated left`:'Done · waiting to be emptied';return `<div class="cycle-timer"><span class="countdown">${label}</span>${percent===null?'':`<progress max="100" value="${percent}" aria-label="Estimated cycle progress"></progress>`}</div>`;}
-function tick(){for(const card of document.querySelectorAll('[data-card]')){const m=machines.find(m=>m.id===card.dataset.card);if(!m)continue;const pill=card.querySelector('.pill');pill.textContent=status(m);pill.classList.toggle('done',status(m)==='Done');const timer=card.querySelector('[data-timer]');if(timer)timer.innerHTML=timerMarkup(m);}if($('checkin').open&&selected){const m=machines.find(m=>m.id===selected.id);if(m){$('machine-status').textContent=m.owner_id?`${status(m)} · ${m.display_name}`:'Empty';$('dialog-timer').innerHTML=timerMarkup(m);}}}
+function timerMarkup(machine, compact = false) {
+  if (!machine.owner_id) return compact ? '<span class="empty-time">—</span>' : '';
+  const { seconds, percent } = timing(machine);
+  const label = seconds
+    ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} left`
+    : 'Done · awaiting pickup';
+  if (compact) return `<span class="countdown">${seconds ? label : 'Awaiting pickup'}</span>`;
+  return `<div class="cycle-timer"><span class="countdown">${label}</span>
+    ${percent === null ? '' : `<progress max="100" value="${percent}" aria-label="Estimated cycle progress"></progress>`}</div>`;
+}
+
+function tick() {
+  for (const item of document.querySelectorAll('[data-card]')) {
+    const machine = machines.find(machine => machine.id === item.dataset.card);
+    if (!machine) continue;
+    const pill = item.querySelector('.pill');
+    pill.textContent = status(machine);
+    pill.classList.toggle('done', status(machine) === 'Done');
+    const timer = item.querySelector('[data-timer]');
+    if (timer) timer.innerHTML = timerMarkup(machine, timer.dataset.compact === 'true');
+  }
+  if ($('checkin').open && selected) {
+    const machine = machines.find(machine => machine.id === selected.id);
+    if (machine) {
+      $('machine-status').textContent = machine.owner_id
+        ? `${status(machine)} · ${machine.display_name}` : 'Empty';
+      $('dialog-timer').innerHTML = timerMarkup(machine);
+    }
+  }
+}
+
 function phoneNumber(resident){const value=resident?.phone?.trim();return value&&/^\+?[\d ()-]{7,25}$/.test(value)?value:null;}
 function contactLink(m){const resident=residents.find(r=>r.id===m.resident_id);if(!m.owner_id)return '';return phoneNumber(resident)?`<button class="contact" data-contact="${escape(resident.id)}" aria-label="Copy phone number for ${escape(m.display_name)}">Copy phone number</button>`:'<span class="contact-unavailable">Phone number not added</span>';}
 async function copyPhone(id){const resident=residents.find(r=>r.id===id);const phone=phoneNumber(resident);if(!phone)return;try{await navigator.clipboard.writeText(phone);($('checkin').open?$('dialog-feedback'):$('copy-feedback')).textContent=`Phone number for ${resident.name} copied.`;}catch{($('checkin').open?$('dialog-feedback'):$('copy-feedback')).textContent=`Couldn’t copy automatically. ${resident.name}: ${phone}`;}}
+function renderAvailability(filter) {
+  return roomNames.map(room => {
+    const roomMachines = machines.filter(machine => machine.room === room);
+    const visibleMachines = roomMachines.filter(machine => filter === 'all' || machine.kind === filter);
+    visibleMachines.sort((first, second) => {
+      if (first.kind !== second.kind) return first.kind === 'washer' ? -1 : 1;
+      return first.id.localeCompare(second.id);
+    });
+    return `
+      <section class="availability-room" aria-label="${escape(room)}">
+        <div class="room-head">
+          <h3>${escape(room)}</h3>
+          <span class="room-count">${roomMachines.filter(machine => !machine.owner_id).length} of ${roomMachines.length} empty</span>
+        </div>
+        <div class="list-columns" aria-hidden="true">
+          <span>Machine</span><span>Time left</span><span>Resident</span><span>Contact</span>
+        </div>
+        <ul class="availability-list">
+          ${visibleMachines.map(machine => `
+            <li data-card="${escape(machine.id)}" class="availability-row ${machine.owner_id ? 'occupied' : 'empty'}">
+              <div class="availability-machine">
+                <strong>${escape(machine.label)}</strong>
+                <span class="pill ${machine.owner_id ? 'busy' : ''} ${status(machine) === 'Done' ? 'done' : ''}">${escape(status(machine))}</span>
+              </div>
+              <div class="availability-time" data-timer data-compact="true">${timerMarkup(machine, true)}</div>
+              <div class="availability-resident"><span class="sr-only">Resident </span>${machine.owner_id ? escape(machine.display_name) : '—'}</div>
+              <div class="availability-contact">${contactLink(machine)}</div>
+            </li>`).join('')}
+        </ul>
+      </section>`;
+  }).join('');
+}
+
 function render() {
   const filter = $('filter').value;
   const emptyCount = kind => machines.filter(machine => machine.kind === kind && !machine.owner_id).length;
   $('summary').innerHTML = `
     <div><strong>${emptyCount('washer')}<small> / 6</small></strong><span>Washers empty</span></div>
     <div><strong>${emptyCount('dryer')}<small> / 6</small></strong><span>Dryers empty</span></div>`;
+
+  $('rooms').className = view === 'availability' ? 'availability-view' : 'tracker-view';
+  if (view === 'availability') {
+    $('rooms').innerHTML = renderAvailability(filter);
+    return;
+  }
 
   $('rooms').innerHTML = roomNames.map(room => {
     const roomMachines = machines.filter(machine => machine.room === room);
@@ -55,7 +123,14 @@ function render() {
       </section>`;
   }).join('');
 }
-function setView(next){view=next;$('nav-tracker').setAttribute('aria-pressed',String(view==='tracker'));$('nav-availability').setAttribute('aria-pressed',String(view==='availability'));$('view-title').textContent=view==='tracker'?'Mark a machine':'Machine availability';render();}
+function setView(next) {
+  view = next;
+  $('copy-feedback').textContent = '';
+  $('nav-tracker').setAttribute('aria-pressed', String(view === 'tracker'));
+  $('nav-availability').setAttribute('aria-pressed', String(view === 'availability'));
+  $('view-title').textContent = view === 'tracker' ? 'Use a machine' : 'Laundry availability';
+  render();
+}
 function renderResidents(){const current=$('resident').value;const term=$('resident-search').value.toLocaleLowerCase().trim();const filtered=residents.filter(r=>r.name.toLocaleLowerCase().includes(term));$('resident').innerHTML='<option value="">'+(filtered.length?'Choose your name':'No matching residents')+'</option>'+filtered.map(r=>`<option value="${escape(r.id)}">${escape(r.name)}</option>`).join('');if(filtered.some(r=>r.id===current))$('resident').value=current;$('roster-note').textContent=!live?'Sample residents · preview only.':residents.length?'Your selection identifies this load; it does not verify your identity.':'The house roster hasn’t been added yet. Check-in will be available once it is configured.';}
 function openMachine(id) {
   selected = machines.find(machine => machine.id === id);

@@ -194,3 +194,38 @@ dialog input, dialog select { display: block; width: 100%; margin-top: 8px; }
   .summary > div { flex-direction: column; align-items: flex-start; gap: 2px; }
   .room-head { flex-wrap: wrap; }
 }
+
+/* Availability uses one continuous list per room. */
+.availability-room { margin: 30px 0; }
+.availability-room .room-head { margin-bottom: 16px; }
+.availability-list { list-style: none; padding: 0; margin: 0; border-top: 1px solid #c8d8ef; }
+.list-columns, .availability-row { display: grid; grid-template-columns: 1fr 1.1fr 1.2fr 150px; gap: 18px; align-items: center; }
+.list-columns { padding: 0 12px 12px; color: #526b8d; font-size: .875rem; }
+.availability-row { padding: 15px 12px; border-bottom: 1px solid #d5e1f3; min-width: 0; }
+.availability-machine { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.availability-machine strong { font-size: 1rem; font-weight: 500; }
+.availability-time .countdown { margin: 0; font-size: .9375rem; }
+.availability-resident { min-width: 0; overflow-wrap: anywhere; font-size: .9375rem; }
+.availability-contact { min-width: 0; }
+.availability-contact .contact { border: 0; border-radius: 7px; background: transparent; color: #2c5eaa; min-height: 44px; padding: 8px 0; font-size: .875rem; text-decoration: underline; text-underline-offset: 3px; text-align: left; }
+.availability-contact .contact-unavailable { display: block; margin: 0; }
+.empty-time, .availability-row.empty .availability-resident { color: #7d8da3; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 800px) {
+  .list-columns, .availability-row { grid-template-columns: 1fr 1fr 1fr 130px; gap: 12px; }
+}
+@media (max-width: 640px) {
+  .availability-room { margin: 24px 0 32px; }
+  .availability-room .room-head { margin-bottom: 14px; }
+  .list-columns { display: none; }
+  .availability-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; padding: 14px 0; }
+  .availability-machine { gap: 7px; }
+  .availability-machine strong { font-size: 1rem; }
+  .availability-machine .pill { font-size: .8125rem; padding: 5px 8px; }
+  .availability-time { text-align: right; }
+  .availability-time .countdown { font-size: .875rem; }
+  .availability-contact { text-align: right; }
+  .availability-contact .contact { text-align: right; font-size: .875rem; padding-block: 8px; }
+  .availability-row.empty .availability-resident, .availability-row.empty .availability-contact { display: none; }
+  .availability-row.empty { min-height: 56px; }
+}
