@@ -1,2 +1,4 @@
-// Only use the project's public publishable key here. Never use a secret/service-role key.
-window.KAPPA_CONFIG = { supabaseUrl: '', supabasePublishableKey: '' };
+window.KAPPA_CONFIG = {
+  supabaseUrl: 'https://snriammbvvruiuoaeqsr.supabase.co',
+  supabasePublishableKey: 'sb_publishable_y-EERLakcs2nBniAZX3bhg_IO8-rPfe'
+};
