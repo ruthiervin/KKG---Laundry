@@ -142,7 +142,8 @@ dialog input, dialog select { display: block; width: 100%; margin-top: 8px; }
 .duration-labels { color: #526b8d; font-size: .875rem; margin-bottom: 6px; }
 .duration-wheels { position: relative; border: 1px solid #e0e8f5; border-radius: 12px; background: #f7faff; }
 .picker-selection { position: absolute; top: 88px; left: 8px; right: 8px; height: 44px; border-radius: 8px; background: #e0ebfc; pointer-events: none; }
-.time-wheel { position: relative; height: 220px; padding: 88px 0; overflow-y: auto; scrollbar-width: none; scroll-snap-type: y mandatory; overscroll-behavior-y: contain; touch-action: pan-y; border-radius: 10px; }
+.time-wheel { position: relative; height: 220px; --wheel-space: 88px; padding: 0; overflow-y: auto; scrollbar-width: none; scroll-snap-type: y mandatory; overscroll-behavior-y: contain; touch-action: pan-y pinch-zoom; overflow-anchor: none; scroll-behavior: auto; border-radius: 10px; }
+.wheel-spacer { height: var(--wheel-space); pointer-events: none; }
 .time-wheel::-webkit-scrollbar { display: none; }
 .wheel-value { height: 44px; display: grid; place-items: center; scroll-snap-align: center; font-size: 1.5rem; line-height: 1; color: #7185a0; font-variant-numeric: tabular-nums; cursor: pointer; }
 .wheel-value.selected { color: #1e447b; font-weight: 600; }
@@ -184,7 +185,7 @@ dialog input, dialog select { display: block; width: 100%; margin-top: 8px; }
   .machine h4 { font-size: 1.0625rem; }
   .pill { font-size: .875rem; }
   dialog { padding: 20px; }
-  .time-wheel { height: 132px; padding-block: 44px; }
+  .time-wheel { height: 132px; --wheel-space: 44px; }
   .picker-selection { top: 44px; }
 }
 @media (max-width: 350px) {

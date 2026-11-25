@@ -1,4 +1,4 @@
-import { DurationPicker } from './duration-picker.js';
+import { DurationPicker } from './duration-picker.js?v=2';
 const $ = id => document.getElementById(id);
 const config = window.KAPPA_CONFIG;
 const durationPicker = new DurationPicker($('duration-picker'));
